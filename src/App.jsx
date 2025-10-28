@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { fetchMealsByIngredient } from "./utils/api";
 import SearchBar from "./components/SearchBar";
 import MealList from "./components/MealList";
+import { fetchMealsByIngredient } from "./utils/api";
+import MealModal from "./components/MealModal";
 
 export default function App() {
   const [q, setQ] = useState("");
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   const handleSearch = async () => {
     setError("");
@@ -30,26 +32,78 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="max-w-3xl mx-auto text-center mb-6">
-        <h1 className="text-2xl font-bold">Recipe Ideas</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Search recipes by ingredient
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+      {/* Header */}
+      <header className="bg-green-600 text-white w-full text-center py-4 shadow-md">
+        <h1 className="text-2xl font-bold">🍳 Recipe Ideas</h1>
+        <p className="text-sm opacity-90">
+          Find delicious meals by ingredients you already have!
         </p>
       </header>
 
-      <SearchBar
-        value={q}
-        onChange={setQ}
-        onSubmit={handleSearch}
-        loading={loading}
-      />
+      {/* Main Content */}
+      <main className="flex flex-col items-center w-full max-w-5xl px-4 py-6">
+        {/* Search Bar */}
+        <SearchBar
+          value={q}
+          onChange={setQ}
+          onSubmit={handleSearch}
+          loading={loading}
+        />
 
-      <main className="max-w-3xl mx-auto mt-6">
-        {error && <div className="text-red-600 mb-4">{error}</div>}
-        {loading && <div className="mb-4">Loading...</div>}
-        {!loading && meals?.length > 0 && <MealList meals={meals} />}
+        {/* Favorites Button */}
+        <div className="w-full text-center mt-4">
+          <button
+            onClick={() => {
+              const saved = JSON.parse(localStorage.getItem("favorites") || "[]");
+              setMeals(saved);
+              setError("");
+            }}
+            className="text-sm text-green-700 hover:text-green-900 underline"
+          >
+            View Favorites ❤️
+          </button>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <p className="mt-6 text-gray-500">Loading recipes...</p>
+        )}
+
+        {/* Error State */}
+        {error && <p className="mt-6 text-red-500">{error}</p>}
+
+        {/* Recipe Results */}
+        {!loading && !error && meals.length > 0 && (
+          <>
+            <MealList meals={meals} onMealClick={setSelectedMeal} />
+
+            {/* Scroll to Top Button */}
+            <div className="flex justify-center my-8">
+              <button
+                onClick={() =>
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }
+                className="bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700 transition"
+              >
+                ↑ Back to top
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && meals.length === 0 && (
+          <p className="mt-6 text-gray-400">
+            Start by typing an ingredient above 👆
+          </p>
+        )}
       </main>
+
+      {/* Modal */}
+      {selectedMeal && (
+        <MealModal meal={selectedMeal} onClose={() => setSelectedMeal(null)} />
+      )}
     </div>
   );
 }
